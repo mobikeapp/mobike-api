@@ -19,6 +19,7 @@ from dotenv import load_dotenv
 import requests
 import json
 from datetime import datetime
+from datetime import timedelta
 from google.protobuf.timestamp_pb2 import Timestamp
 
 #------------------------#
@@ -111,8 +112,7 @@ async def sanity_check():
 
 @app.post("/routing")
 async def routing(route_request: RouteRequest):
-    bimodal(route_request)
-    result = unimodal_transit(route_request)
+    result = bimodal(route_request)
     return result
 
 
@@ -120,7 +120,7 @@ async def routing(route_request: RouteRequest):
 #   ROUTING HELPER FUNCTIONS   #
 #------------------------------#
 
-def unimodal_cycling(route_request: RouteRequest, departure_time: datetime = datetime.now()) -> str:
+def unimodal_cycling(route_request: RouteRequest, departure_time: datetime = datetime.utcnow()) -> str:
     body = {
         'origin': {
             'location': {
@@ -142,9 +142,11 @@ def unimodal_cycling(route_request: RouteRequest, departure_time: datetime = dat
         'departureTime': retrieve_pb_timestamp(departure_time).ToJsonString()
     }
     response = requests.post(ROUTING_API_URL, data=json.dumps(body | REQUEST_PREFS_GLOBAL), headers=HEADERS)
+    print(retrieve_pb_timestamp(datetime.utcnow()))
+    print(retrieve_pb_timestamp(departure_time))
     return response.json()
 
-def unimodal_transit(route_request: RouteRequest, departure_time: datetime = datetime.now()) -> str:
+def unimodal_transit(route_request: RouteRequest, departure_time: datetime = datetime.utcnow()) -> str:
     body = {
         'origin': {
             'location': {
@@ -168,25 +170,56 @@ def unimodal_transit(route_request: RouteRequest, departure_time: datetime = dat
     response = requests.post(ROUTING_API_URL, data=json.dumps(body | REQUEST_PREFS_GLOBAL), headers=HEADERS)
     return response.json()
 
-def bimodal(route_request: RouteRequest, departure_time: datetime = datetime.now()) -> str:
+def bimodal(route_request: RouteRequest, departure_time: datetime = datetime.utcnow()) -> str:
     transit_first_run = unimodal_transit(route_request, departure_time)
-    print(transit_first_run)
     legs = transit_first_run['routes'][0]['legs']
     for leg in legs:
         steps_without_walk = [step for step in leg['steps'] if step['travelMode'] != 'WALK']
         leg['steps'] = steps_without_walk
     transit_start_latlng = legs[0]['steps'][0]['transitDetails']['stopDetails']['departureStop']['location']['latLng']
     transit_end_latlng = legs[len(legs)-1]['steps'][len(legs[len(legs)-1]['steps'])-1]['transitDetails']['stopDetails']['departureStop']['location']['latLng']
-    
+    transit_route_request = RouteRequest(
+        origin = Coordinate(
+            latitude = transit_start_latlng['latitude'], 
+            longitude = transit_start_latlng['longitude']
+            ),
+        destination = Coordinate(
+            latitude = transit_end_latlng['latitude'], 
+            longitude = transit_end_latlng['longitude']
+            )
+        )
+    departure_time = datetime.utcnow() + timedelta(seconds=5)
+    cycling_first_mile = unimodal_cycling(
+        RouteRequest(
+            origin = route_request.origin,
+            destination = transit_route_request.origin
+        ),
+        departure_time = departure_time
+        )
+    cycling_first_mile_elapsed = timedelta(seconds=float(cycling_first_mile['routes'][0]['duration'].rstrip('s')))
+    transit_second_run = unimodal_transit(
+        transit_route_request,
+        departure_time=departure_time+cycling_first_mile_elapsed
+        )
+    transit_second_run_elapsed = timedelta(seconds=float(transit_second_run['routes'][0]['duration'].rstrip('s')))
+    cycling_last_mile = unimodal_cycling(
+        RouteRequest(
+            origin = transit_route_request.destination,
+            destination = route_request.destination
+            ),
+        departure_time=departure_time+cycling_first_mile_elapsed+transit_second_run_elapsed)
+    final_routing = dict(cycling_first_mile)
+    final_routing['routes'][0]['distanceMeters'] += (transit_second_run['routes'][0]['distanceMeters'] + cycling_last_mile['routes'][0]['distanceMeters'])
+    final_routing['routes'][0]['duration'] = f"{float(final_routing['routes'][0]['duration'].rstrip('s')) + float(transit_second_run['routes'][0]['duration'].rstrip('s')) + float(cycling_last_mile['routes'][0]['duration'].rstrip('s'))}s"
+    final_routing['routes'][0]['staticDuration'] = f"{float(final_routing['routes'][0]['staticDuration'].rstrip('s')) + float(transit_second_run['routes'][0]['staticDuration'].rstrip('s')) + float(cycling_last_mile['routes'][0]['staticDuration'].rstrip('s'))}s"
+    final_routing['routes'][0]['legs'].append(transit_second_run['routes'][0]['legs'])
+    final_routing['routes'][0]['legs'].append(cycling_last_mile['routes'][0]['legs'])
+    return final_routing
 
 #------------------------------#
 #   GENERAL HELPER FUNCTIONS   #
 #------------------------------#
 
-def retrieve_pb_timestamp(time_datetime: datetime) -> Timestamp:
-    time_timestamp = Timestamp()
-    time_timestamp.FromDatetime(time_datetime)
-    return time_timestamp
 def retrieve_pb_timestamp(time_datetime: datetime) -> Timestamp:
     time_timestamp = Timestamp()
     time_timestamp.FromDatetime(time_datetime)
