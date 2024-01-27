@@ -48,11 +48,9 @@ FIELD_MASKS = {
     # Determines what data we get back from Google Maps
 
     # routes.* masks cover the total journey (when returning a multimodal route we will sum these)
-    'routes.startLocation',
-    'routes.endLocation',
     'routes.distanceMeters',
     'routes.duration',
-    'routes.staticDuration'
+    'routes.staticDuration',
 
     # routes.legs.* masks cover each 'leg' of the journey (generally 1 per route for this use case, additional modes will be merged in as new legs of the journey)
     'routes.legs.startLocation',
@@ -60,13 +58,12 @@ FIELD_MASKS = {
     'routes.legs.distanceMeters',
     'routes.legs.duration',
     'routes.legs.staticDuration',
-    'routes.legs.polyline' # Intentionally only including polyline starting at leg level to handle data merge in multimodal scenario
+    'routes.legs.polyline', # Intentionally only including polyline starting at leg level to handle data merge in multimodal scenario
 
     # routes.legs.steps.* masks cover each step of each 'leg', such as cycling on an individual 
     'routes.legs.steps.startLocation',
     'routes.legs.steps.endLocation',
     'routes.legs.steps.distanceMeters',
-    'routes.legs.steps.duration',
     'routes.legs.steps.staticDuration',
     'routes.legs.steps.polyline',
     'routes.legs.steps.transitDetails'
@@ -117,7 +114,7 @@ async def routing(route_request: RouteRequest):
 #   ROUTING HELPER FUNCTIONS   #
 #------------------------------#
 
-def unimodal_cycling(route_request: RouteRequest, departure_time: datetime = datetime.now()):
+def unimodal_cycling(route_request: RouteRequest, departure_time: datetime = datetime.now()) -> str:
     departure_time_as_timestamp = Timestamp()
     departure_time_as_timestamp.FromDatetime(departure_time)
     body = {
@@ -134,7 +131,7 @@ def unimodal_cycling(route_request: RouteRequest, departure_time: datetime = dat
     response = requests.post(ROUTING_API_URL, data=json.dumps(body | REQUEST_PREFS_GLOBAL), headers=HEADERS)
     return response.json()
 
-def unimodal_transit(route_request: RouteRequest, departure_time: datetime = datetime.now()):
+def unimodal_transit(route_request: RouteRequest, departure_time: datetime = datetime.now()) -> str:
     departure_time_as_timestamp = Timestamp()
     departure_time_as_timestamp.FromDatetime(departure_time)
     body = {
@@ -151,4 +148,11 @@ def unimodal_transit(route_request: RouteRequest, departure_time: datetime = dat
     return response.json()
 
 def bimodal(route_request: RouteRequest, departure_time: datetime = datetime.now()):
+    pass
+
+#------------------------------#
+#   GENERAL HELPER FUNCTIONS   #
+#------------------------------#
+
+def retrieve_pb_timestamp(time_datetime: datetime):
     pass
