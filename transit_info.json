@@ -1,0 +1,50 @@
+{
+  "metrorail": {
+    "bike-allowed": true,
+    "bike-types": [
+      "Bike",
+      "E-Bike"
+    ],
+    "dimensions-and-type": "The Bicycle must be smaller than 80\" long, 48\" high, 22\" wide.",
+    "where-to-place": "There is a limit of four bicycles per railcar,two can be at each end of a railcar.\nWe recommend using the first and last cars, since they are often the least crowded.",
+    "age-restrictions": "If under 16 must be accompanied by adult for bike usage. One guardian can accompany only one child with a bike at a time.",
+    "etiquette-how--to": "Use the extra-wide fare gates to enter the station. As always, stand a safe distance away from the platform edge and ensure your bicycle is not blocking other passengers.\nEnter rail cars through the front and rear end doors. Use the elevators to transport your bicycle and allow other customers to enter and exit first.\nPlease do not ride your bicycle inside stations, on platforms, or on trains.\nRemember to keep both wheels on the ground, the kickstand up, and always stay with your bicycle.\nMake sure your bicycle is free of excess grease and dirt and has no sharp projections.",
+    "blanket-notice-from-service": "Bicyclists are responsible for their own bicycles and all actions, injuries, losses, and/or damages related to their bicycles in station areas, aboard trains or on Metrobuses. Metro assumes no responsibility for lost or damaged bicycles.\n"
+  },
+  "dc-circulator": {
+    "bike-allowed": true,
+    "bike-types": [
+      "Bike",
+      "E-Bike"
+    ],
+    "dimensions-and-type": "Information confirmed as not available.",
+    "where-to-place": "2 Bikes per Bus, bikes go in front of the bus on the rack.",
+    "age-restrictions": "Not Specified",
+    "etiquette-how--to": "1. Inform the bus driver that you are going to load your bicycle and then proceed to the foldable rack on the front of the bus. Instructions for loading your bicycle will also be posted there.\n2. Grasp the handle at the top of the rack, squeeze and pull it down.\n3. Lift the bicycle onto the rack, placing it into one of the slots. There is a spring-loaded support arm attached to each bike space. Place the front wheel of the bicycle pointing toward the support arm and pull the bar up and over the front tire.\n4. As you ride comfortably on the bus to your next stop, do not forget that your bike is hanging out on the front of the bus and grab it at your stop.",                                                                                                                                                              ",
+    "blanket-notice-from-service": "N/A"
+  },
+   "dc-streetcar": {
+   "bike-allowed": true,
+   "bike-types": [
+      "Bike",
+      "E-Bike"
+    ],
+    "dimensions-and-type": "Information not available.",
+    "where-to-place": "Space permitting, bikes are to be held upright inside streetcar while riding.",
+    "age-restrictions": "Not Specified",
+    "etiquette-how--to": "Use the center doors for level boarding. There are no internal or external bike racks, so please hold bikes upright while riding.",
+    "blanket-notice-from-service": "Please be aware that full streetcars may not have room for bicycles and permit only when there is adequate space."
+  },
+  "metrobus": {
+    "bike-allowed": true,
+    "bike-types": [
+      "Bike",
+      "E-Bike"
+    ],
+    "dimensions-and-type": "Traditional, tandem, electric-powered, and folding bicycles within the permitted size (80\" long, 48\" high, and 22\" wide)",
+    "where-to-place": "2 Bikes can be held total, and go infront of the bus on the rack.",
+    "age-restrictions": "Not Specified",
+    "etiquette-how--to": "Before the bus arrives, remove any loose or valuable items from your bicycle.\nMake sure the bus stops and the driver sees you before stepping in front of the bus.\nUse one hand to squeeze the top handle and swing the rack down.\nLift your bicycle onto the rack, placing its wheels in the trough. If the front trough is occupied, use the rear trough facing the opposite direction.\nRaise the spring-loaded bar over the front tire and place it near the frame for lateral support. The racks have a locking mechanism to ensure your bicycle stays securely in place.\nBoard the bus, and don't forget to inform the driver when you'll be removing your bicycle.\nWhen you reach your stop, lower the spring-loaded bar, lift your bicycle off the rack, and swing the rack up if it's empty.\nHead to the nearest curb, wave to the driver to indicate you and your bicycle are clear, and off you go on your next adventure!",
+    "blanket-notice-from-service": "Please remove all baggage and storage items from your bicycle before placing it in the rack.\nYour bicycle should be clean and have no sharp projections.\nFor your safety, there are special mirrors on the buses that allow the operators to keep an eye on the racks when you are loading or unloading your bicycle.\nDuring emergency evacuations, bicycles should remain in the rack unless instructed otherwise by Metro employees, police, or fire officials.\n\nBicyclists are responsible for their own bicycles and all actions, injuries, losses, and/or damages related to their bicycles in station areas, aboard trains or on Metrobuses. Metro assumes no responsibility for lost or damaged bicycles."
+  }
+}
