@@ -60,12 +60,14 @@ FIELD_MASKS = {
     'routes.legs.staticDuration',
     'routes.legs.polyline', # Intentionally only including polyline starting at leg level to handle data merge in multimodal scenario
 
-    # routes.legs.steps.* masks cover each step of each 'leg', such as cycling on an individual 
+    # routes.legs.steps.* masks cover each step of each 'leg', such as cycling on an individual street or taking a specific bus
     'routes.legs.steps.startLocation',
     'routes.legs.steps.endLocation',
     'routes.legs.steps.distanceMeters',
     'routes.legs.steps.staticDuration',
     'routes.legs.steps.polyline',
+    'routes.legs.steps.transitDetails',
+    'routes.legs.steps.travelMode'
     'routes.legs.steps.transitDetails',
     'routes.legs.steps.travelMode'
 }
@@ -85,9 +87,13 @@ REQUEST_PREFS_GLOBAL = {
 #   DEFINE DATA MODEL   #
 #-----------------------#
 
+class Coordinate(BaseModel):
+    latitude: float
+    longitude: float
+
 class RouteRequest(BaseModel):
-    origin_place_id: str
-    dest_place_id: str
+    origin: Coordinate
+    destination: Coordinate
 
 
 #---------------------------#
@@ -107,6 +113,7 @@ async def sanity_check():
 
 @app.post("/routing")
 async def routing(route_request: RouteRequest):
+    bimodal(route_request)
     result = unimodal_transit(route_request)
     return result
 
@@ -118,12 +125,23 @@ async def routing(route_request: RouteRequest):
 def unimodal_cycling(route_request: RouteRequest, departure_time: datetime = datetime.now()) -> str:
     body = {
         'origin': {
-            'placeId': route_request.origin_place_id
+            'location': {
+                'latLng': {
+                    'latitude': route_request.origin.latitude,
+                    'longitude': route_request.origin.longitude
+                }
+            }
         },
         'destination': {
-            'placeId': route_request.dest_place_id
+            'location': {
+                'latLng': {
+                    'latitude': route_request.destination.latitude,
+                    'longitude': route_request.destination.longitude
+                }
+            }
         },
         'travelMode': 'BICYCLE',
+        'departureTime': retrieve_pb_timestamp(departure_time).ToJsonString()
         'departureTime': retrieve_pb_timestamp(departure_time).ToJsonString()
 
     }
@@ -133,25 +151,49 @@ def unimodal_cycling(route_request: RouteRequest, departure_time: datetime = dat
 def unimodal_transit(route_request: RouteRequest, departure_time: datetime = datetime.now()) -> str:
     body = {
         'origin': {
-            'placeId': route_request.origin_place_id
+            'location': {
+                'latLng': {
+                    'latitude': route_request.origin.latitude,
+                    'longitude': route_request.origin.longitude
+                }
+            }
         },
         'destination': {
-            'placeId': route_request.dest_place_id
+            'location': {
+                'latLng': {
+                    'latitude': route_request.destination.latitude,
+                    'longitude': route_request.destination.longitude
+                }
+            }
         },
         'travelMode': 'TRANSIT',
+        'departureTime': retrieve_pb_timestamp(departure_time).ToJsonString()
         'departureTime': retrieve_pb_timestamp(departure_time).ToJsonString()
     }
     response = requests.post(ROUTING_API_URL, data=json.dumps(body | REQUEST_PREFS_GLOBAL), headers=HEADERS)
     return response.json()
 
 def bimodal(route_request: RouteRequest, departure_time: datetime = datetime.now()) -> str:
-    transit_route = unimodal_transit(route_request, departure_time)
+    transit_first_run = unimodal_transit(route_request, departure_time)
+    legs = transit_first_run['routes'][0]['legs']
+    for leg in legs:
+        steps_without_walk = [step for step in leg['steps'] if step['travelMode'] != 'WALK']
+        leg['steps'] = steps_without_walk
+    transit_start_latlng = legs[0]['steps'][0]['transitDetails']['stopDetails']['departureStop']['location']['latLng']
+    transit_end_latlng = legs[len(legs)-1]['steps'][len(legs[len(legs)-1]['steps'])-1]['transitDetails']['stopDetails']['departureStop']['location']['latLng']
+    
+
+
 
 
 #------------------------------#
 #   GENERAL HELPER FUNCTIONS   #
 #------------------------------#
 
+def retrieve_pb_timestamp(time_datetime: datetime) -> Timestamp:
+    time_timestamp = Timestamp()
+    time_timestamp.FromDatetime(time_datetime)
+    return time_timestamp
 def retrieve_pb_timestamp(time_datetime: datetime) -> Timestamp:
     time_timestamp = Timestamp()
     time_timestamp.FromDatetime(time_datetime)
