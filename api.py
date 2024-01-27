@@ -66,7 +66,8 @@ FIELD_MASKS = {
     'routes.legs.steps.distanceMeters',
     'routes.legs.steps.staticDuration',
     'routes.legs.steps.polyline',
-    'routes.legs.steps.transitDetails'
+    'routes.legs.steps.transitDetails',
+    'routes.legs.steps.travelMode'
 }
 HEADERS = {
         'Content-Type': 'application/json',
@@ -115,8 +116,6 @@ async def routing(route_request: RouteRequest):
 #------------------------------#
 
 def unimodal_cycling(route_request: RouteRequest, departure_time: datetime = datetime.now()) -> str:
-    departure_time_as_timestamp = Timestamp()
-    departure_time_as_timestamp.FromDatetime(departure_time)
     body = {
         'origin': {
             'placeId': route_request.origin_place_id
@@ -125,15 +124,13 @@ def unimodal_cycling(route_request: RouteRequest, departure_time: datetime = dat
             'placeId': route_request.dest_place_id
         },
         'travelMode': 'BICYCLE',
-        'departureTime': departure_time_as_timestamp.ToJsonString()
+        'departureTime': retrieve_pb_timestamp(departure_time).ToJsonString()
 
     }
     response = requests.post(ROUTING_API_URL, data=json.dumps(body | REQUEST_PREFS_GLOBAL), headers=HEADERS)
     return response.json()
 
 def unimodal_transit(route_request: RouteRequest, departure_time: datetime = datetime.now()) -> str:
-    departure_time_as_timestamp = Timestamp()
-    departure_time_as_timestamp.FromDatetime(departure_time)
     body = {
         'origin': {
             'placeId': route_request.origin_place_id
@@ -142,17 +139,20 @@ def unimodal_transit(route_request: RouteRequest, departure_time: datetime = dat
             'placeId': route_request.dest_place_id
         },
         'travelMode': 'TRANSIT',
-        'departureTime': departure_time_as_timestamp.ToJsonString()
+        'departureTime': retrieve_pb_timestamp(departure_time).ToJsonString()
     }
     response = requests.post(ROUTING_API_URL, data=json.dumps(body | REQUEST_PREFS_GLOBAL), headers=HEADERS)
     return response.json()
 
-def bimodal(route_request: RouteRequest, departure_time: datetime = datetime.now()):
-    pass
+def bimodal(route_request: RouteRequest, departure_time: datetime = datetime.now()) -> str:
+    transit_route = unimodal_transit(route_request, departure_time)
+
 
 #------------------------------#
 #   GENERAL HELPER FUNCTIONS   #
 #------------------------------#
 
-def retrieve_pb_timestamp(time_datetime: datetime):
-    pass
+def retrieve_pb_timestamp(time_datetime: datetime) -> Timestamp:
+    time_timestamp = Timestamp()
+    time_timestamp.FromDatetime(time_datetime)
+    return time_timestamp
