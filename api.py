@@ -9,7 +9,7 @@
 
 # FastAPI Imports
 from typing import Annotated
-from fastapi import Body,FastAPI
+from fastapi import Body,FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -112,7 +112,9 @@ async def sanity_check():
 
 @app.post("/routing")
 async def routing(route_request: RouteRequest):
-    result = bimodal(route_request)
+    bimodal_result = bimodal(route_request, datetime.utcnow())
+    cycling_result = unimodal_cycling(route_request, datetime.utcnow())
+    result = cycling_result if float(cycling_result['routes'][0]['duration'].rstrip('s')) < float(bimodal_result['routes'][0]['duration'].rstrip('s')) else bimodal_result
     return result
 
 
@@ -142,8 +144,6 @@ def unimodal_cycling(route_request: RouteRequest, departure_time: datetime = dat
         'departureTime': retrieve_pb_timestamp(departure_time).ToJsonString()
     }
     response = requests.post(ROUTING_API_URL, data=json.dumps(body | REQUEST_PREFS_GLOBAL), headers=HEADERS)
-    print(retrieve_pb_timestamp(datetime.utcnow()))
-    print(retrieve_pb_timestamp(departure_time))
     return response.json()
 
 def unimodal_transit(route_request: RouteRequest, departure_time: datetime = datetime.utcnow()) -> str:
@@ -188,7 +188,7 @@ def bimodal(route_request: RouteRequest, departure_time: datetime = datetime.utc
             longitude = transit_end_latlng['longitude']
             )
         )
-    departure_time = datetime.utcnow() + timedelta(seconds=5)
+    departure_time = datetime.utcnow()
     cycling_first_mile = unimodal_cycling(
         RouteRequest(
             origin = route_request.origin,
@@ -199,7 +199,7 @@ def bimodal(route_request: RouteRequest, departure_time: datetime = datetime.utc
     cycling_first_mile_elapsed = timedelta(seconds=float(cycling_first_mile['routes'][0]['duration'].rstrip('s')))
     transit_second_run = unimodal_transit(
         transit_route_request,
-        departure_time=departure_time+cycling_first_mile_elapsed
+        departure_time = departure_time + cycling_first_mile_elapsed
         )
     transit_second_run_elapsed = timedelta(seconds=float(transit_second_run['routes'][0]['duration'].rstrip('s')))
     cycling_last_mile = unimodal_cycling(
@@ -207,7 +207,8 @@ def bimodal(route_request: RouteRequest, departure_time: datetime = datetime.utc
             origin = transit_route_request.destination,
             destination = route_request.destination
             ),
-        departure_time=departure_time+cycling_first_mile_elapsed+transit_second_run_elapsed)
+        departure_time = departure_time + cycling_first_mile_elapsed + transit_second_run_elapsed
+        )
     final_routing = dict(cycling_first_mile)
     final_routing['routes'][0]['distanceMeters'] += (transit_second_run['routes'][0]['distanceMeters'] + cycling_last_mile['routes'][0]['distanceMeters'])
     final_routing['routes'][0]['duration'] = f"{float(final_routing['routes'][0]['duration'].rstrip('s')) + float(transit_second_run['routes'][0]['duration'].rstrip('s')) + float(cycling_last_mile['routes'][0]['duration'].rstrip('s'))}s"
@@ -222,5 +223,5 @@ def bimodal(route_request: RouteRequest, departure_time: datetime = datetime.utc
 
 def retrieve_pb_timestamp(time_datetime: datetime) -> Timestamp:
     time_timestamp = Timestamp()
-    time_timestamp.FromDatetime(time_datetime)
+    time_timestamp.FromDatetime(time_datetime + timedelta(seconds=5))
     return time_timestamp
