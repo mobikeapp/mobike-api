@@ -68,8 +68,6 @@ FIELD_MASKS = {
     'routes.legs.steps.polyline',
     'routes.legs.steps.transitDetails',
     'routes.legs.steps.travelMode'
-    'routes.legs.steps.transitDetails',
-    'routes.legs.steps.travelMode'
 }
 HEADERS = {
         'Content-Type': 'application/json',
@@ -142,8 +140,6 @@ def unimodal_cycling(route_request: RouteRequest, departure_time: datetime = dat
         },
         'travelMode': 'BICYCLE',
         'departureTime': retrieve_pb_timestamp(departure_time).ToJsonString()
-        'departureTime': retrieve_pb_timestamp(departure_time).ToJsonString()
-
     }
     response = requests.post(ROUTING_API_URL, data=json.dumps(body | REQUEST_PREFS_GLOBAL), headers=HEADERS)
     return response.json()
@@ -168,13 +164,13 @@ def unimodal_transit(route_request: RouteRequest, departure_time: datetime = dat
         },
         'travelMode': 'TRANSIT',
         'departureTime': retrieve_pb_timestamp(departure_time).ToJsonString()
-        'departureTime': retrieve_pb_timestamp(departure_time).ToJsonString()
     }
     response = requests.post(ROUTING_API_URL, data=json.dumps(body | REQUEST_PREFS_GLOBAL), headers=HEADERS)
     return response.json()
 
 def bimodal(route_request: RouteRequest, departure_time: datetime = datetime.now()) -> str:
     transit_first_run = unimodal_transit(route_request, departure_time)
+    print(transit_first_run)
     legs = transit_first_run['routes'][0]['legs']
     for leg in legs:
         steps_without_walk = [step for step in leg['steps'] if step['travelMode'] != 'WALK']
@@ -182,9 +178,6 @@ def bimodal(route_request: RouteRequest, departure_time: datetime = datetime.now
     transit_start_latlng = legs[0]['steps'][0]['transitDetails']['stopDetails']['departureStop']['location']['latLng']
     transit_end_latlng = legs[len(legs)-1]['steps'][len(legs[len(legs)-1]['steps'])-1]['transitDetails']['stopDetails']['departureStop']['location']['latLng']
     
-
-
-
 
 #------------------------------#
 #   GENERAL HELPER FUNCTIONS   #
