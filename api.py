@@ -8,7 +8,7 @@
 #-------------#
 
 # FastAPI Imports
-from typing import Annotated
+from typing import Annotated, Optional
 from fastapi import Body,FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -93,7 +93,7 @@ class Coordinate(BaseModel):
 class RouteRequest(BaseModel):
     origin: Coordinate
     destination: Coordinate
-    departure_time: str | None = None
+    departure_time: Optional[str] = None
 
 
 #---------------------------#
