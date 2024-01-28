@@ -13,7 +13,7 @@
     <a href=""><strong>Site</strong></a>  ·
     <a href=""><strong>Frontend Code</strong></a>  ·
   <a href="https://github.com/mobikeapp/mobike-api"><strong>API Code</strong></a> ·
-  <a href="https://mobike-api.vercel.app/docs"><strong>API Documentation</strong></a>
+  <a href="https://api.mobike.compare/docs"><strong>API Documentation</strong></a>
 </p>
 <br/>
 
