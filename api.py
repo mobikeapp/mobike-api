@@ -93,6 +93,7 @@ class Coordinate(BaseModel):
 class RouteRequest(BaseModel):
     origin: Coordinate
     destination: Coordinate
+    departure_time: str | None = None
 
 
 #---------------------------#
@@ -112,21 +113,35 @@ async def sanity_check():
 
 @app.post("/routing")
 async def routing(route_request: RouteRequest):
+    if route_request.departure_time is not None:
+        try:
+            departure_time_timestamp = Timestamp()
+            departure_time_timestamp.FromJsonString(route_request.departure_time)
+            departure_time_specified = retrieve_datetime_from_pb(departure_time_timestamp)
+            
+        except Exception as e:
+            print(e)
+            departure_time_specified = None
+            raise HTTPException(status_code=400, detail="Invalid time")
+    else:
+        departure_time_specified = None
+    if departure_time_specified is not None and departure_time_specified + timedelta(minutes=1) < datetime.utcnow():
+                raise HTTPException(status_code=400, detail="Time specified is in the past")
     try:
-        bimodal_result = bimodal(route_request, datetime.utcnow())
+        bimodal_result = bimodal(route_request, datetime.utcnow() if departure_time_specified is None else departure_time_specified)
     except Exception as e:
         print(e)
         bimodal_result = None
     try:
-        cycling_result = unimodal_cycling(route_request, datetime.utcnow())
+        cycling_result = unimodal_cycling(route_request, datetime.utcnow() if departure_time_specified is None else departure_time_specified)
     except Exception as e:
         print(e)
         cycling_result = None
-    if not bimodal_result and not cycling_result:
+    if bimodal_result is None and cycling_result is None:
         raise HTTPException(status_code=418, detail="I'm a little teapot short and stout")
-    elif not bimodal_result:
+    elif bimodal_result is None:
         return cycling_result
-    elif not cycling_result:
+    elif cycling_result is None:
         return bimodal_result
     else:
         return cycling_result if float(cycling_result['routes'][0]['duration'].rstrip('s')) < float(bimodal_result['routes'][0]['duration'].rstrip('s')) else bimodal_result
@@ -239,3 +254,7 @@ def retrieve_pb_timestamp(time_datetime: datetime) -> Timestamp:
     time_timestamp = Timestamp()
     time_timestamp.FromDatetime(time_datetime + timedelta(seconds=5))
     return time_timestamp
+
+def retrieve_datetime_from_pb(time_timestamp: Timestamp) -> datetime:
+    time_datetime = time_timestamp.ToDatetime()
+    return time_datetime
