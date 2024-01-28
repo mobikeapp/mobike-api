@@ -112,10 +112,24 @@ async def sanity_check():
 
 @app.post("/routing")
 async def routing(route_request: RouteRequest):
-    bimodal_result = bimodal(route_request, datetime.utcnow())
-    cycling_result = unimodal_cycling(route_request, datetime.utcnow())
-    result = cycling_result if float(cycling_result['routes'][0]['duration'].rstrip('s')) < float(bimodal_result['routes'][0]['duration'].rstrip('s')) else bimodal_result
-    return result
+    try:
+        bimodal_result = bimodal(route_request, datetime.utcnow())
+    except Exception as e:
+        print(e)
+        bimodal_result = None
+    try:
+        cycling_result = unimodal_cycling(route_request, datetime.utcnow())
+    except Exception as e:
+        print(e)
+        cycling_result = None
+    if not bimodal_result and not cycling_result:
+        raise HTTPException(status_code=418, detail="I'm a little teapot short and stout")
+    elif not bimodal_result:
+        return cycling_result
+    elif not cycling_result:
+        return bimodal_result
+    else:
+        return cycling_result if float(cycling_result['routes'][0]['duration'].rstrip('s')) < float(bimodal_result['routes'][0]['duration'].rstrip('s')) else bimodal_result
 
 
 #------------------------------#
